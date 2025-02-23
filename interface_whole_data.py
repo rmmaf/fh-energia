@@ -57,10 +57,6 @@ with col_filter_stats:
                                                                      (st.session_state['df']['Consumo_medio'] <= consumo_medio[1])]
         st.session_state['df_grouped'] = group_data(st.session_state['df_filtered'])
 
-    if st.button('Resetar Filtro'):
-        st.session_state['df_filtered'] = st.session_state['df'] 
-        st.session_state['df_grouped'] = group_data(st.session_state['df_filtered'])
-
     #Displaying the statistics of the filtered data: mean, median, std, max, min of the Consumo_medio by UF using plotly
     df_grouped_filtered = st.session_state['df_filtered'].groupby('UF')['Consumo_medio'].agg(['mean', 'median', 'std', 'max', 'min']).reset_index()
     fig = px.bar(df_grouped_filtered, x='UF', y=['mean', 'median', 'std', 'max', 'min'], barmode='group')
@@ -73,7 +69,7 @@ with col_map:
 
     for key, data_gp in st.session_state['df_grouped']:
         data_str = data_gp[CNPJ_COLS].to_html(index=False)
-        ene_str = data_gp[ENE_P_COLS].to_html(index=False)
+        ene_str = data_gp[ENE_P_COLS].drop_duplicates().to_html(index=False)
 
         popup_str = 'COD_ID: ' +  key[0] + '<br>' + \
                     'CEP: ' + str(key[3]) + '<br>' + \
