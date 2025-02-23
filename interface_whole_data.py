@@ -23,26 +23,28 @@ df['CNPJ_info'] = df[['cnpj', 'nome_fantasia', 'endereco']].apply(lambda x: 'CNP
 
 #Concatenating CNPJ_info into a single string
 df_grouped = df.groupby(['COD_ID', 'POINT_X', 'POINT_Y', 
-                         'CEP', 'CNAE', 'LGRD', 'CNPJ_count'], as_index=False).agg({'CNPJ_info': '<br><br><br>'.join}).reset_index()
+                         'CEP', 'CNAE', 'LGRD', 'CNPJ_count'], as_index=False)#.agg({'CNPJ_info': '<br><br><br>'.join}).reset_index()
 
 #Displaying the map with the points of df_grouped with the CNPJ_info in the pop up, also coloring the points by the number of CNPJ (the color spectrum is from green to red, smaller is green and has to be a continuous scale)
 #with col_map:
-m = folium.Map(location=[df_grouped['POINT_Y'].mean(), df_grouped['POINT_X'].mean()], 
+m = folium.Map(location=[df['POINT_Y'].mean(), df['POINT_X'].mean()], 
                 zoom_start=3, control_scale=True)
 
-for i,row in df_grouped.iterrows():
-    popup_str = 'COD_ID: ' +  row['COD_ID'] + '<br>' + 'CEP: ' + str(row['CEP']) + '<br>' + 'CNAE' + str(row['CNAE']) + '<br>' + 'LGRD: ' + row['LGRD'] + '<br><br>' + row['CNPJ_info']
-    iframe = folium.IFrame(html= popup_str, width=300, height=200)
-    popup = folium.Popup(iframe, max_width=300)
+for key, data_gp in df_grouped:
+    data_str = data_gp[['cnpj', 'nome_fantasia', 'endereco']].to_html(index=False)
+    popup_str = 'COD_ID: ' +  key[0] + '<br>' + 'CEP: ' + str(key[3]) + '<br>' + 'CNAE: ' + str(key[4]) + '<br>' + 'LGRD: ' + key[5] + '<br><br>' + data_str
+
+    iframe = folium.IFrame(html= popup_str, width=500, height=400)
+    popup = folium.Popup(iframe, max_width=500)
     #1 == green, 2 to 9 == yellow, 10 above == red
-    if row['CNPJ_count'] == 1:
+    if key[6] == 1:
         color = 'green'
-    elif row['CNPJ_count'] > 1 and row['CNPJ_count'] < 10:
+    elif key[6] > 1 and key[6] < 10:
         color = 'orange'
     else:
         color = 'red'
 
-    folium.Marker(location=[row['POINT_Y'],row['POINT_X']],
+    folium.Marker(location=[key[2],key[1]],
                 popup = popup, c=popup_str, icon=folium.Icon(color=color)).add_to(m)
     
-folium_static(m, width=1000)
+folium_static(m, width=1000, height=800)
