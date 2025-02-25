@@ -15,14 +15,14 @@ CNPJ_COLS = ['cnpj', 'nome_fantasia', 'endereco']
 
 if 'df' not in st.session_state:
     df = pd.read_csv('./data/whole_data/ucat_join.csv')
-    df['Consumo_medio'] = df[ENE_P_COLS].mean(axis=1)
+    df['Consumo Mediano'] = df[ENE_P_COLS].mean(axis=1)
     df_count = df.groupby('COD_ID')['cnpj'].count().reset_index(name='CNPJ_count')
     df = df.merge(df_count, on='COD_ID', how='inner')
 
     st.session_state['mean_lat'] = df['POINT_Y'].mean() 
     st.session_state['mean_long']  = df['POINT_X'].mean()
-    st.session_state['max_consumo_medio'] = df['Consumo_medio'].max()
-    st.session_state['min_consumo_medio'] = df['Consumo_medio'].min()
+    st.session_state['max_consumo_mediano'] = df['Consumo Mediano'].max()
+    st.session_state['min_consumo_mediano'] = df['Consumo Mediano'].min()
     #st.session_state['cnae_list'] = df['CNAE'].unique()
     #st.session_state['uf_list'] = df['UF'].unique()
     st.session_state['df'] = df
@@ -33,7 +33,7 @@ if 'df_filtered' not in st.session_state:
 
 def group_data(df):
     df_grouped = df.groupby(['COD_ID', 'POINT_X', 'POINT_Y', 
-                         'CEP', 'CNAE', 'LGRD', 'CNPJ_count', 'UF', 'Consumo_medio', *ENE_P_COLS], as_index=False)
+                         'CEP', 'CNAE', 'LGRD', 'CNPJ_count', 'UF', 'Consumo Mediano', *ENE_P_COLS], as_index=False)
     return df_grouped
 
 if 'df_grouped' not in st.session_state:
@@ -44,21 +44,21 @@ if 'df_grouped' not in st.session_state:
 
 col_filter_stats, col_map = st.columns((1, 1)) #
 
-#Filtering the grouped data by the selected cnae and UF (using the selectbox) and the Consumo_medio (using the slider). The filtered data is stored in df_filtered and has to have a reset button that deletes the filter
+#Filtering the grouped data by the selected cnae and UF (using the selectbox) and the Consumo Mediano (using the slider). The filtered data is stored in df_filtered and has to have a reset button that deletes the filter
 with col_filter_stats:
-    consumo_medio = st.slider('Consumo Médio Anual', 
-                              min_value=st.session_state['min_consumo_medio'], 
-                              max_value=st.session_state['max_consumo_medio'], 
-                              value=(st.session_state['min_consumo_medio'], 
-                                     st.session_state['max_consumo_medio']))
+    consumo_medio = st.slider('Consumo Mediano Anual', 
+                              min_value=st.session_state['min_consumo_mediano'], 
+                              max_value=st.session_state['max_consumo_mediano'], 
+                              value=(st.session_state['min_consumo_mediano'], 
+                                     st.session_state['max_consumo_mediano']))
 
     if st.button('Aplicar Filtro'):
-        st.session_state['df_filtered'] = st.session_state['df'].loc[(st.session_state['df']['Consumo_medio'] >= consumo_medio[0]) &
-                                                                     (st.session_state['df']['Consumo_medio'] <= consumo_medio[1])]
+        st.session_state['df_filtered'] = st.session_state['df'].loc[(st.session_state['df']['Consumo Mediano'] >= consumo_medio[0]) &
+                                                                     (st.session_state['df']['Consumo Mediano'] <= consumo_medio[1])]
         st.session_state['df_grouped'] = group_data(st.session_state['df_filtered'])
 
-    #Displaying the statistics of the filtered data: mean, median, std, max, min of the Consumo_medio by UF using plotly
-    df_grouped_filtered = st.session_state['df_filtered'].groupby('UF')['Consumo_medio'].agg(['mean', 'median', 'std', 'max', 'min']).reset_index()
+    #Displaying the statistics of the filtered data: mean, median, std, max, min of the Consumo Mediano by UF using plotly
+    df_grouped_filtered = st.session_state['df_filtered'].groupby('UF')['Consumo Mediano'].agg(['mean', 'median', 'std', 'max', 'min']).reset_index()
     fig = px.bar(df_grouped_filtered, x='UF', y=['mean', 'median', 'std', 'max', 'min'], barmode='group')
     st.plotly_chart(fig)
 
@@ -71,11 +71,12 @@ with col_map:
         data_str = data_gp[CNPJ_COLS].to_html(index=False)
         ene_str = data_gp[ENE_P_COLS].drop_duplicates().to_html(index=False)
 
-        popup_str = 'COD_ID: ' +  key[0] + '<br>' + \
+        popup_str = 'ID BDGD: ' +  key[0] + '<br>' + \
                     'CEP: ' + str(key[3]) + '<br>' + \
                     'CNAE: ' + str(key[4]) + '<br>' + \
                     'LGRD: ' + key[5] + '<br>' + \
-                    'Consumo Médio Anual: ' + str(key[8]) +'<br>' + \
+                    'Consumo Mediano Anual (kWh): ' + str(key[8]) +'<br><br>' + \
+                    'Energia ativa medida na ponta por período (kWh): <br>' + \
                     ene_str + '<br><br>' + data_str
 
         iframe = folium.IFrame(html= popup_str, width=500, height=400)
