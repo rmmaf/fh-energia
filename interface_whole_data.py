@@ -10,7 +10,8 @@ st.set_page_config(layout='wide')
 
 ENE_P_COLS = ['ENE_P_01', 'ENE_P_02', 'ENE_P_03', 'ENE_P_04', 'ENE_P_05', 'ENE_P_06', 'ENE_P_07', 'ENE_P_08',
              'ENE_P_09', 'ENE_P_10', 'ENE_P_11', 'ENE_P_12']
-
+ENE_F_COLS = ['ENE_F_01', 'ENE_F_02', 'ENE_F_03', 'ENE_F_04', 'ENE_F_05', 'ENE_F_06', 'ENE_F_07', 'ENE_F_08',
+                'ENE_F_09', 'ENE_F_10', 'ENE_F_11', 'ENE_F_12']
 CNPJ_COLS = ['cnpj', 'nome_fantasia', 'endereco']
 
 if 'df' not in st.session_state:
@@ -33,7 +34,7 @@ if 'df_filtered' not in st.session_state:
 
 def group_data(df):
     df_grouped = df.groupby(['COD_ID', 'POINT_X', 'POINT_Y', 
-                         'CEP', 'CNAE', 'LGRD', 'CNPJ_count', 'UF', 'Consumo Mediano', *ENE_P_COLS], as_index=False)
+                         'CEP', 'CNAE', 'LGRD', 'CNPJ_count', 'UF', 'cnae_secao', 'ENE_P_count', 'ENE_F_count', *ENE_F_COLS, *ENE_P_COLS], as_index=False)
     return df_grouped
 
 if 'df_grouped' not in st.session_state:
@@ -44,23 +45,31 @@ if 'df_grouped' not in st.session_state:
 
 col_filter_stats, col_map = st.columns((1, 1)) #
 
-#Filtering the grouped data by the selected cnae and UF (using the selectbox) and the Consumo Mediano (using the slider). The filtered data is stored in df_filtered and has to have a reset button that deletes the filter
+#Filtering the grouped data by the selected 'cnae_secao', 'uf', 'ENE_P_count', 'ENE_F_count', 'CNPJ_count (selectbox allowing multiple selections at once the unique values of the columns) add an option to select all values
 with col_filter_stats:
-    consumo_medio = st.slider('Consumo Mediano Anual', 
-                              min_value=st.session_state['min_consumo_mediano'], 
-                              max_value=st.session_state['max_consumo_mediano'], 
-                              value=(st.session_state['min_consumo_mediano'], 
-                                     st.session_state['max_consumo_mediano']))
+    cnae_secao = st.multiselect('Seção CNAE', sorted(st.session_state['df']['cnae_secao'].unique()))
+    uf = st.multiselect('UF', st.session_state['df']['UF'].unique())
+    ENE_P_count = st.multiselect('Quantidade de meses máxima com consumo de energia na ponta', sorted(st.session_state['df']['ENE_P_count'].unique()))
+    ENE_F_count = st.multiselect('Quantidade de meses máxima com consumo de energia fora da ponta', sorted(st.session_state['df']['ENE_F_count'].unique()))
+    CNPJ_count = st.multiselect('Quantidade de CNPJs associados ao consumidor', sorted(st.session_state['df']['CNPJ_count'].unique()))
+    if cnae_secao or uf or ENE_P_count or ENE_F_count or CNPJ_count:
+        df_filtered = st.session_state['df']
+        if cnae_secao:
+            df_filtered = df_filtered[df_filtered['cnae_secao'].isin(cnae_secao)]
+        if uf:
+            df_filtered = df_filtered[df_filtered['UF'].isin(uf)]
+        if ENE_P_count:
+            df_filtered = df_filtered[df_filtered['ENE_P_count'].isin(ENE_P_count)]
+        if ENE_F_count:
+            df_filtered = df_filtered[df_filtered['ENE_F_count'].isin(ENE_F_count)]
+        if CNPJ_count:
+            df_filtered = df_filtered[df_filtered['CNPJ_count'].isin(CNPJ_count)]
+        
+        st.session_state['df_filtered'] = df_filtered
+        st.session_state['df_grouped'] = group_data(df_filtered)
 
-    if st.button('Aplicar Filtro'):
-        st.session_state['df_filtered'] = st.session_state['df'].loc[(st.session_state['df']['Consumo Mediano'] >= consumo_medio[0]) &
-                                                                     (st.session_state['df']['Consumo Mediano'] <= consumo_medio[1])]
-        st.session_state['df_grouped'] = group_data(st.session_state['df_filtered'])
-
-    #Displaying the statistics of the filtered data: mean, median, std, max, min of the Consumo Mediano by UF using plotly
-    df_grouped_filtered = st.session_state['df_filtered'].groupby('UF')['Consumo Mediano'].agg(['mean', 'median', 'std', 'max', 'min']).reset_index()
-    fig = px.bar(df_grouped_filtered, x='UF', y=['mean', 'median', 'std', 'max', 'min'], barmode='group')
-    st.plotly_chart(fig)
+    #displaying filtered dataframe with the dataframe widget
+    st.write(st.session_state['df_filtered'])
 
 #Displaying the map with the points of df_grouped with the CNPJ_info in the pop up, also coloring the points by the number of CNPJ (the color spectrum is from green to red, smaller is green and has to be a continuous scale)
 with col_map:
