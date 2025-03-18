@@ -45,14 +45,16 @@ if 'df_grouped' not in st.session_state:
 
 col_filter_stats, col_map = st.columns((1, 1)) #
 
-#Filtering the grouped data by the selected 'cnae_secao', 'uf', 'ENE_P_count', 'ENE_F_count', 'CNPJ_count (selectbox allowing multiple selections at once the unique values of the columns) add an option to select all values
+#Filtering the grouped data by the selected 'cnae_secao', 'uf', 'ENE_P_count', 'ENE_F_count', 'CNPJ_count (selectbox allowing multiple selections at once the unique values of the columns) add an option to select all values and add a button to apply the filter
+
 with col_filter_stats:
     cnae_secao = st.multiselect('Seção CNAE', sorted(st.session_state['df']['cnae_secao'].unique()))
-    uf = st.multiselect('UF', st.session_state['df']['UF'].unique())
+    uf = st.multiselect('UF', sorted(st.session_state['df']['UF'].unique()))
     ENE_P_count = st.multiselect('Quantidade de meses máxima com consumo de energia na ponta', sorted(st.session_state['df']['ENE_P_count'].unique()))
     ENE_F_count = st.multiselect('Quantidade de meses máxima com consumo de energia fora da ponta', sorted(st.session_state['df']['ENE_F_count'].unique()))
     CNPJ_count = st.multiselect('Quantidade de CNPJs associados ao consumidor', sorted(st.session_state['df']['CNPJ_count'].unique()))
-    if cnae_secao or uf or ENE_P_count or ENE_F_count or CNPJ_count:
+    apply_filter = st.button('Aplicar Filtro')
+    if apply_filter:
         df_filtered = st.session_state['df']
         if cnae_secao:
             df_filtered = df_filtered[df_filtered['cnae_secao'].isin(cnae_secao)]
@@ -78,15 +80,16 @@ with col_map:
 
     for key, data_gp in st.session_state['df_grouped']:
         data_str = data_gp[CNPJ_COLS].to_html(index=False)
-        ene_str = data_gp[ENE_P_COLS].drop_duplicates().to_html(index=False)
-
+        ene_p_str = data_gp[ENE_P_COLS].drop_duplicates().to_html(index=False)
+        ene_f_str = data_gp[ENE_F_COLS].drop_duplicates().to_html(index=False)
         popup_str = 'ID BDGD: ' +  key[0] + '<br>' + \
                     'CEP: ' + str(key[3]) + '<br>' + \
                     'CNAE: ' + str(key[4]) + '<br>' + \
                     'LGRD: ' + key[5] + '<br>' + \
                     'Consumo Mediano Anual (kWh): ' + str(key[8]) +'<br><br>' + \
                     'Energia ativa medida na ponta por período (kWh): <br>' + \
-                    ene_str + '<br><br>' + data_str
+                    ene_p_str + '<br>' + \
+                    'Energia ativa medida fora da ponta por período (kWh): <br>' + ene_f_str + '<br>' + '<br><br>' + data_str
 
         iframe = folium.IFrame(html= popup_str, width=500, height=400)
         popup = folium.Popup(iframe, max_width=500)
