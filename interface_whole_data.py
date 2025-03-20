@@ -8,6 +8,8 @@ from streamlit_folium import st_folium, folium_static
 
 st.set_page_config(layout='wide')
 
+st.logo("logo.png", size="large")
+
 ENE_P_COLS = ['ENE_P_01', 'ENE_P_02', 'ENE_P_03', 'ENE_P_04', 'ENE_P_05', 'ENE_P_06', 'ENE_P_07', 'ENE_P_08',
              'ENE_P_09', 'ENE_P_10', 'ENE_P_11', 'ENE_P_12']
 ENE_F_COLS = ['ENE_F_01', 'ENE_F_02', 'ENE_F_03', 'ENE_F_04', 'ENE_F_05', 'ENE_F_06', 'ENE_F_07', 'ENE_F_08',
