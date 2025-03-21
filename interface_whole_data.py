@@ -1,9 +1,6 @@
 import pandas as pd
 import streamlit as st
-import numpy as np
 import folium 
-from folium.plugins import HeatMap
-import plotly.express as px
 from streamlit_folium import st_folium, folium_static
 
 st.set_page_config(layout='wide')
